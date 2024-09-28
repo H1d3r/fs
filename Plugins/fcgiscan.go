@@ -18,7 +18,7 @@ import (
 //https://xz.aliyun.com/t/9544
 //https://github.com/wofeiwo/webcgi-exploits
 
-func FcgiScan(info *config.HostInfo) {
+func FcgiScan(info *config.ScannerCfg) {
 	if config.NoBrute {
 		return
 	}

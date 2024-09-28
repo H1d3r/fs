@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-func MS17010EXP(info *config.HostInfo) {
+func MS17010EXP(info *config.ScannerCfg) {
 	address := info.Host + ":445"
 	var sc string
 	switch config.SC {
@@ -240,7 +240,7 @@ func smb1GetResponse(conn net.Conn) ([]byte, *smbHeader, error) {
 	buf := make([]byte, 4)
 	_, err := io.ReadFull(conn, buf)
 	if err != nil {
-		const format = "failed to get SMB1 response about NetBIOS session service: %s"
+		const format = "failed to get SMB1 response about NetBIOSDetect session service: %s"
 		return nil, nil, fmt.Errorf(format, err)
 	}
 	typ := buf[0]
@@ -271,7 +271,7 @@ func smb1GetResponse(conn net.Conn) ([]byte, *smbHeader, error) {
 func smbClientNegotiate(conn net.Conn) error {
 	buf := bytes.Buffer{}
 
-	// --------NetBIOS Session Service--------
+	// --------NetBIOSDetect Session Service--------
 
 	// message type
 	buf.WriteByte(0x00)
@@ -344,7 +344,7 @@ func smbClientNegotiate(conn net.Conn) error {
 func smb1AnonymousLogin(conn net.Conn) ([]byte, *smbHeader, error) {
 	buf := bytes.Buffer{}
 
-	// --------NetBIOS Session Service--------
+	// --------NetBIOSDetect Session Service--------
 
 	// session message
 	buf.WriteByte(0x00)
@@ -464,7 +464,7 @@ func getOSName(raw []byte) (string, error) {
 func treeConnectAndX(conn net.Conn, address string, userID uint16) (*smbHeader, error) {
 	buf := bytes.Buffer{}
 
-	// --------NetBIOS Session Service--------
+	// --------NetBIOSDetect Session Service--------
 
 	// message type
 	buf.WriteByte(0x00)
@@ -572,7 +572,7 @@ func smb1LargeBuffer(conn net.Conn, header *smbHeader) error {
 func sendNTTrans(conn net.Conn, treeID, userID uint16) (*smbHeader, error) {
 	buf := bytes.Buffer{}
 
-	// --------NetBIOS Session Service--------
+	// --------NetBIOSDetect Session Service--------
 
 	// message type
 	buf.WriteByte(0x00)
@@ -663,7 +663,7 @@ func makeSMB1Trans2ExploitPacket(treeID, userID uint16, timeout int, typ string)
 	timeout = timeout*0x10 + 3
 	buf := bytes.Buffer{}
 
-	// --------NetBIOS Session Service--------
+	// --------NetBIOSDetect Session Service--------
 
 	// message type
 	buf.WriteByte(0x00)
@@ -783,7 +783,7 @@ func makeSMB1Trans2ExploitPacket(treeID, userID uint16, timeout int, typ string)
 func makeSMB1EchoPacket(treeID, userID uint16) []byte {
 	buf := bytes.Buffer{}
 
-	// --------NetBIOS Session Service--------
+	// --------NetBIOSDetect Session Service--------
 
 	// message type
 	buf.WriteByte(0x00)
@@ -883,7 +883,7 @@ func smb1FreeHole(address string, start bool) (net.Conn, error) {
 func makeSMB1FreeHoleSessionPacket(flags2, vcNum, nativeOS []byte) []byte {
 	buf := bytes.Buffer{}
 
-	// --------NetBIOS Session Service--------
+	// --------NetBIOSDetect Session Service--------
 
 	// message type
 	buf.WriteByte(0x00)

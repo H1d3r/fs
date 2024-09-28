@@ -8,22 +8,21 @@ import (
 	"net"
 )
 
-// fs 主要插件模块
 var PluginList = map[string]interface{}{
-	"21":      FtpScan,
+	"21":      FtpBruteforce,
 	"22":      sshBruteforce,
 	"135":     Findnet,
-	"139":     NetBIOS,
+	"139":     NetBIOSDetect,
 	"445":     SmbScan,
-	"1433":    MssqlScan,
-	"1521":    OracleScan,
-	"3306":    MysqlScan,
-	"3389":    RdpScan,
+	"1433":    MssqlBruteforce,
+	"1521":    OracleBruteforce,
+	"3306":    MysqlBruteforce,
+	"3389":    RdpBruteforce,
 	"5432":    PostgresScan,
-	"6379":    RedisScan,
+	"6379":    RedisBruteforce,
 	"9000":    FcgiScan,
-	"11211":   MemcachedScan,
-	"27017":   MongodbScan,
+	"11211":   MemcachedBruteforce,
+	"27017":   MongodbBruteforce,
 	"1000001": MS17010,
 	"1000002": SmbGhost,
 	"1000003": WebTitle,

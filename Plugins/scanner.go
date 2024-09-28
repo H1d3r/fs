@@ -10,34 +10,36 @@ import (
 	"sync"
 )
 
-func Scan(info config.HostInfo) {
-	fmt.Println("[*] start_Live_scan")
+var (
+	aliveHosts []string
+	aliveAddr  []string
+)
+
+func Scan(info config.ScannerCfg) {
+	config.LogSuccess("[*] start_Live_scan")
 	WaitCheckHosts, err := config.ParseIP(info.Host, config.HostFile, config.NoHosts)
-	if err != nil {
+	if err != nil || len(WaitCheckHosts) <= 0 {
 		fmt.Println("[-] No_target_host", err)
 		return
 	}
-	// 加载 poc 模块
-	lib.Inithttp()
+	// 加载 http req config
 
 	var threadChan = make(chan struct{}, config.Threads)
 	var wg = sync.WaitGroup{}
 	web := strconv.Itoa(config.PORTList["web"])
 	ms17010 := strconv.Itoa(config.PORTList["ms17010"])
 
-	var aliveHosts []string
-	var aliveAddr []string
-	// 存活主机探测
-	if len(WaitCheckHosts) > 0 {
-		if config.NoPing == false || config.Scantype == "icmp" {
-			aliveHosts = CheckHostLive(WaitCheckHosts, config.Ping)
-		}
-		if config.Scantype == "icmp" {
-			config.LogWG.Wait()
-			return
-		}
+	// 主机发现模块
+	if config.NoPing == false {
+		aliveHosts = CheckHostLive(WaitCheckHosts, config.PingScanType)
+	} else {
+		aliveHosts = WaitCheckHosts
+	}
+	if len(aliveHosts) == 0 {
+		config.Stopfs("未发现存活主机")
 	}
 
+	lib.Inithttp()
 	// 存活主机端口扫描
 	if len(aliveHosts) > 0 {
 		if config.Scantype == "webonly" || config.Scantype == "webpoc" {
@@ -108,29 +110,30 @@ func Scan(info config.HostInfo) {
 
 var Mutex = &sync.Mutex{}
 
-func AddScan(actionType string, info config.HostInfo, ch *chan struct{}, wg *sync.WaitGroup) {
+func AddScan(actionType string, info config.ScannerCfg, ch *chan struct{}, wg *sync.WaitGroup) {
 	*ch <- struct{}{}
 	wg.Add(1)
 	go func() {
-		Mutex.Lock()
+		//Mutex.Lock()
 		config.Num += 1
-		Mutex.Unlock()
+		//Mutex.Unlock()
 		ConvertFunc(&actionType, &info)
-		Mutex.Lock()
+		//Mutex.Lock()
 		config.End += 1
-		Mutex.Unlock()
+		//Mutex.Unlock()
 		wg.Done()
 		<-*ch
 	}()
 }
 
-func ConvertFunc(name *string, info *config.HostInfo) {
+func ConvertFunc(name *string, info *config.ScannerCfg) {
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Printf("[-] %v:%v scan error: %v\n", info.Host, info.Ports, err)
 		}
 	}()
 	f := reflect.ValueOf(PluginList[*name])
+	//fmt.Println(PluginList[*name])
 	infoSlice := []reflect.Value{reflect.ValueOf(info)}
 	f.Call(infoSlice)
 }

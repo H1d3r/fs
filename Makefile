@@ -5,10 +5,10 @@ NAME = fs
 .PHONY: all linux windows macos mips arm clean
 
 all:
-	${BUILD_ENV} GOOS=linux GOARCH=386 go build ${OPTIONS} -o release/${NAME}_86 main.go
-	${BUILD_ENV} GOOS=linux GOARCH=amd64 go build ${OPTIONS} -o release/${NAME}_64 main.go
-	${BUILD_ENV} GOOS=windows GOARCH=amd64 go build ${OPTIONS} -o release/${NAME}_64.exe main.go
-	${BUILD_ENV} GOOS=windows GOARCH=386 go build ${OPTIONS} -o release/${NAME}_86.exe main.go
+	${BUILD_ENV} GOOS=linux GOARCH=386 go build ${OPTIONS} -o release/${NAME}86 main.go
+	${BUILD_ENV} GOOS=linux GOARCH=amd64 go build ${OPTIONS} -o release/${NAME}64 main.go
+	${BUILD_ENV} GOOS=windows GOARCH=amd64 go build ${OPTIONS} -o release/${NAME}64.exe main.go
+	${BUILD_ENV} GOOS=windows GOARCH=386 go build ${OPTIONS} -o release/${NAME}86.exe main.go
 	${BUILD_ENV} GOOS=darwin GOARCH=amd64 go build ${OPTIONS} -o release/${NAME}_darwin64 main.go
 	${BUILD_ENV} GOOS=darwin GOARCH=arm64 go build ${OPTIONS} -o release/${NAME}_darwinarm64 main.go
 	${BUILD_ENV} GOOS=linux GOARCH=mipsle go build ${OPTIONS} -o release/${NAME}_mipsel main.go

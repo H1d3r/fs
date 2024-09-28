@@ -16,12 +16,12 @@ var (
 	bufferV3, _ = hex.DecodeString("0900ffff0000")
 )
 
-func Findnet(info *config.HostInfo) error {
+func Findnet(info *config.ScannerCfg) error {
 	err := FindnetScan(info)
 	return err
 }
 
-func FindnetScan(info *config.HostInfo) error {
+func FindnetScan(info *config.ScannerCfg) error {
 	realhost := fmt.Sprintf("%s:%v", info.Host, 135)
 	conn, err := config.WrapperTcpWithTimeout("tcp", realhost, time.Duration(config.Timeout)*time.Second)
 	if err != nil {
@@ -32,6 +32,7 @@ func FindnetScan(info *config.HostInfo) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = conn.Write(bufferV1)
 	if err != nil {
 		return err

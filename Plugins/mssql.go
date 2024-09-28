@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func MssqlScan(info *config.HostInfo) (tmperr error) {
+func MssqlBruteforce(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return
 	}
@@ -36,7 +36,7 @@ func MssqlScan(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func MssqlConn(info *config.HostInfo, user string, pass string) (flag bool, err error) {
+func MssqlConn(info *config.ScannerCfg, user string, pass string) (flag bool, err error) {
 	flag = false
 	Host, Port, Username, Password := info.Host, info.Ports, user, pass
 	dataSourceName := fmt.Sprintf("server=%s;user id=%s;password=%s;port=%v;encrypt=disable;timeout=%v", Host, Username, Password, Port, time.Duration(config.Timeout)*time.Second)

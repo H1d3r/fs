@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func MongodbScan(info *config.HostInfo) error {
+func MongodbBruteforce(info *config.ScannerCfg) error {
 	if config.NoBrute {
 		return nil
 	}
@@ -19,7 +19,7 @@ func MongodbScan(info *config.HostInfo) error {
 	return err
 }
 
-func MongodbUnauth(info *config.HostInfo) (flag bool, err error) {
+func MongodbUnauth(info *config.ScannerCfg) (flag bool, err error) {
 	flag = false
 	// op_msg
 	packet1 := []byte{

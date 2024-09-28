@@ -23,7 +23,7 @@ var (
 	trans2SessionSetupRequest, _  = hex.DecodeString(AesDecrypt(trans2SessionSetupRequest_enc, key))
 )
 
-func MS17010(info *config.HostInfo) error {
+func MS17010(info *config.ScannerCfg) error {
 	if config.NoBrute {
 		return nil
 	}
@@ -35,7 +35,7 @@ func MS17010(info *config.HostInfo) error {
 	return err
 }
 
-func MS17010Scan(info *config.HostInfo) error {
+func MS17010Scan(info *config.ScannerCfg) error {
 	ip := info.Host
 	// connecting to a host in LAN if reachable should be very quick
 	conn, err := config.WrapperTcpWithTimeout("tcp", ip+":445", time.Duration(config.Timeout)*time.Second)

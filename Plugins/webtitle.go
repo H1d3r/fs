@@ -18,13 +18,13 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 )
 
-func WebTitle(info *config.HostInfo) error {
+func WebTitle(info *config.ScannerCfg) error {
 	if config.Scantype == "webpoc" {
 		WebScan.WebScan(info)
 		return nil
 	}
-	err, CheckData := GOWebTitle(info)
-	info.Infostr = WebScan.InfoCheck(info.Url, &CheckData)
+	err, CheckData := CrawlWebData(info)
+	info.InfoStr = WebScan.InfoCheck(info.Url, &CheckData)
 
 	if !config.NoPoc && err == nil {
 		WebScan.WebScan(info)
@@ -35,7 +35,7 @@ func WebTitle(info *config.HostInfo) error {
 	return err
 }
 
-func GOWebTitle(info *config.HostInfo) (err error, CheckData []WebScan.CheckDatas) {
+func CrawlWebData(info *config.ScannerCfg) (err error, CheckData []WebScan.CheckDatas) {
 	if info.Url == "" {
 		switch info.Ports {
 		case "80":
@@ -89,7 +89,7 @@ func GOWebTitle(info *config.HostInfo) (err error, CheckData []WebScan.CheckData
 	return
 }
 
-func geturl(info *config.HostInfo, flag int, CheckData []WebScan.CheckDatas) (error, string, []WebScan.CheckDatas) {
+func geturl(info *config.ScannerCfg, flag int, CheckData []WebScan.CheckDatas) (error, string, []WebScan.CheckDatas) {
 	//flag 1 first try
 	//flag 2 /favicon.ico
 	//flag 3 302
@@ -111,6 +111,7 @@ func geturl(info *config.HostInfo, flag int, CheckData []WebScan.CheckDatas) (er
 	req.Header.Set("User-agent", config.UserAgent)
 	req.Header.Set("Accept", config.Accept)
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9")
+	req.Header.Set("Connection", "close")
 	if config.Cookie != "" {
 		req.Header.Set("Cookie", config.Cookie)
 	}
@@ -119,8 +120,9 @@ func geturl(info *config.HostInfo, flag int, CheckData []WebScan.CheckDatas) (er
 	//} else {
 	//	req.Header.Set("Cookie", "rememberMe=1")
 	//}
-	req.Header.Set("Connection", "close")
+
 	var client *http.Client
+
 	if flag == 1 {
 		client = lib.ClientNoRedirect
 	} else {
@@ -228,11 +230,11 @@ func GetProtocol(host string, Timeout int64) (protocol string) {
 		return
 	}
 
-	socksconn, err := config.WrapperTcpWithTimeout("tcp", host, time.Duration(Timeout)*time.Second)
+	socksConn, err := config.WrapperTcpWithTimeout("tcp", host, time.Duration(Timeout)*time.Second)
 	if err != nil {
 		return
 	}
-	conn := tls.Client(socksconn, &tls.Config{MinVersion: tls.VersionTLS10, InsecureSkipVerify: true})
+	conn := tls.Client(socksConn, &tls.Config{MinVersion: tls.VersionTLS10, InsecureSkipVerify: true})
 	defer func() {
 		if conn != nil {
 			defer func() {

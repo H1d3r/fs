@@ -26,7 +26,7 @@ type Brutelist struct {
 	pass string
 }
 
-func RdpScan(info *config.HostInfo) (tmperr error) {
+func RdpBruteforce(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return
 	}

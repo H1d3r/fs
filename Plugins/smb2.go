@@ -11,7 +11,7 @@ import (
 	"github.com/hirochachacha/go-smb2"
 )
 
-func SmbScan2(info *config.HostInfo) (tmperr error) {
+func SmbScan2(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return nil
 	}
@@ -65,7 +65,7 @@ func SmbScan2(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func Smb2Con(info *config.HostInfo, user string, pass string, hash []byte, hasprint bool) (flag bool, err error, flag2 bool) {
+func Smb2Con(info *config.ScannerCfg, user string, pass string, hash []byte, hasprint bool) (flag bool, err error, flag2 bool) {
 	conn, err := net.DialTimeout("tcp", info.Host+":445", time.Duration(config.Timeout)*time.Second)
 	if err != nil {
 		return

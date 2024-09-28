@@ -16,7 +16,7 @@ var (
 	dir        string
 )
 
-func RedisScan(info *config.HostInfo) (tmperr error) {
+func RedisBruteforce(info *config.ScannerCfg) (tmperr error) {
 	starttime := time.Now().Unix()
 	flag, err := RedisUnauth(info)
 	if flag == true && err == nil {
@@ -45,7 +45,7 @@ func RedisScan(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func RedisConn(info *config.HostInfo, pass string) (flag bool, err error) {
+func RedisConn(info *config.ScannerCfg, pass string) (flag bool, err error) {
 	flag = false
 	realhost := fmt.Sprintf("%s:%v", info.Host, info.Ports)
 	conn, err := config.WrapperTcpWithTimeout("tcp", realhost, time.Duration(config.Timeout)*time.Second)
@@ -81,7 +81,7 @@ func RedisConn(info *config.HostInfo, pass string) (flag bool, err error) {
 	return flag, err
 }
 
-func RedisUnauth(info *config.HostInfo) (flag bool, err error) {
+func RedisUnauth(info *config.ScannerCfg) (flag bool, err error) {
 	flag = false
 	realhost := fmt.Sprintf("%s:%v", info.Host, info.Ports)
 	conn, err := config.WrapperTcpWithTimeout("tcp", realhost, time.Duration(config.Timeout)*time.Second)

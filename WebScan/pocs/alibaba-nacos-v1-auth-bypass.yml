@@ -21,7 +21,3 @@ rules:
       User-Agent: Nacos-Server
     expression: |
       response.status == 200 && response.body.bcontains(bytes("delete user ok!"))
-detail:
-  author: kmahyyg(https://github.com/kmahyyg)
-  links:
-    - https://github.com/alibaba/nacos/issues/4593

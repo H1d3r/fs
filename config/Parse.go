@@ -1,7 +1,6 @@
 package config
 
 import (
-	"bufio"
 	"encoding/hex"
 	"fmt"
 	"net/url"
@@ -10,7 +9,7 @@ import (
 	"strings"
 )
 
-func Parse(Info *HostInfo) {
+func Parse(Info *ScannerCfg) {
 	ParseInput(Info)
 	ParseUser()
 	ParsePass(Info)
@@ -28,7 +27,7 @@ func ParseUser() {
 	}
 
 	if Userfile != "" {
-		users, err := ReadLinesFromFile(Userfile)
+		users, err := ReadFileByLine(Userfile)
 		if err == nil {
 			for _, user := range users {
 				if user != "" {
@@ -44,7 +43,7 @@ func ParseUser() {
 	}
 }
 
-func ParsePass(Info *HostInfo) {
+func ParsePass(Info *ScannerCfg) {
 	var PwdList []string
 	if Password != "" {
 		passs := strings.Split(Password, ",")
@@ -56,7 +55,7 @@ func ParsePass(Info *HostInfo) {
 		Passwords = PwdList
 	}
 	if Passfile != "" {
-		passs, err := ReadLinesFromFile(Passfile)
+		passs, err := ReadFileByLine(Passfile)
 		if err == nil {
 			for _, pass := range passs {
 				if pass != "" {
@@ -79,7 +78,7 @@ func ParsePass(Info *HostInfo) {
 		}
 	}
 	if UrlFile != "" {
-		urls, err := ReadLinesFromFile(UrlFile)
+		urls, err := ReadFileByLine(UrlFile)
 		if err == nil {
 			TmpUrls := make(map[string]struct{})
 			for _, url := range urls {
@@ -93,7 +92,7 @@ func ParsePass(Info *HostInfo) {
 		}
 	}
 	if PortFile != "" {
-		ports, err := ReadLinesFromFile(PortFile)
+		ports, err := ReadFileByLine(PortFile)
 		if err == nil {
 			newport := ""
 			for _, port := range ports {
@@ -106,29 +105,7 @@ func ParsePass(Info *HostInfo) {
 	}
 }
 
-func ReadLinesFromFile(filename string) ([]string, error) {
-	file, err := os.Open(filename)
-	if err != nil {
-		return nil, fmt.Errorf("[-] failed to open file %s: %v", filename, err)
-	}
-	defer file.Close()
-
-	var lines []string
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line != "" {
-			lines = append(lines, line)
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return nil, fmt.Errorf("[-] error scanning file %s: %v", filename, err)
-	}
-
-	return lines, nil
-}
-
-func ParseInput(Info *HostInfo) {
+func ParseInput(Info *ScannerCfg) {
 	if Info.Host == "" && HostFile == "" && URL == "" && UrlFile == "" {
 		os.Exit(0)
 	}
@@ -175,7 +152,7 @@ func ParseInput(Info *HostInfo) {
 		}
 	}
 	if Socks5Proxy != "" {
-		fmt.Println("Socks5Proxy:", Socks5Proxy)
+		fmt.Println("[*] Socks5Proxy:", Socks5Proxy)
 		_, err := url.Parse(Socks5Proxy)
 		if err != nil {
 			fmt.Println("Socks5Proxy parse error:", err)
@@ -216,7 +193,7 @@ func ParseInput(Info *HostInfo) {
 	}
 }
 
-func ParseScantype(Info *HostInfo) {
+func ParseScantype(Info *ScannerCfg) {
 	_, ok := PORTList[Scantype]
 	if !ok {
 		showmode()

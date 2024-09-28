@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func SmbScan(info *config.HostInfo) (tmperr error) {
+func SmbScan(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return nil
 	}
@@ -44,7 +44,7 @@ func SmbScan(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func SmblConn(info *config.HostInfo, user string, pass string, signal chan struct{}) (flag bool, err error) {
+func SmblConn(info *config.ScannerCfg, user string, pass string, signal chan struct{}) (flag bool, err error) {
 	flag = false
 	Host, Username, Password := info.Host, user, pass
 	options := smb.Options{
@@ -67,7 +67,7 @@ func SmblConn(info *config.HostInfo, user string, pass string, signal chan struc
 	return flag, err
 }
 
-func doWithTimeOut(info *config.HostInfo, user string, pass string) (flag bool, err error) {
+func doWithTimeOut(info *config.ScannerCfg, user string, pass string) (flag bool, err error) {
 	signal := make(chan struct{})
 	go func() {
 		flag, err = SmblConn(info, user, pass, signal)

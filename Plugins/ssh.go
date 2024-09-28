@@ -5,12 +5,12 @@ import (
 	"fmt"
 	"fs/config"
 	"golang.org/x/crypto/ssh"
-	"io/ioutil"
+	"os"
 	"strings"
 	"time"
 )
 
-func sshBruteforce(info *config.HostInfo) (tmperr error) {
+func sshBruteforce(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return
 	}
@@ -40,12 +40,12 @@ func sshBruteforce(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func attemptSSH(info *config.HostInfo, user string, pass string) (flag bool, err error) {
+func attemptSSH(info *config.ScannerCfg, user string, pass string) (flag bool, err error) {
 	flag = false
 	Host, Port, Username, Password := info.Host, info.Ports, user, pass
 	var Auth []ssh.AuthMethod
 	if config.SshKey != "" {
-		pemBytes, err := ioutil.ReadFile(config.SshKey)
+		pemBytes, err := os.ReadFile(config.SshKey)
 		if err != nil {
 			return false, errors.New("read key failed" + err.Error())
 		}

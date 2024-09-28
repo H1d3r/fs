@@ -19,7 +19,7 @@ var Pocs embed.FS
 var once sync.Once
 var AllPocs []*lib.Poc
 
-func WebScan(info *config.HostInfo) {
+func WebScan(info *config.ScannerCfg) {
 	once.Do(initpoc)
 	var pocinfo = config.Pocinfo
 	buf := strings.Split(info.Url, "/")
@@ -28,7 +28,7 @@ func WebScan(info *config.HostInfo) {
 	if pocinfo.PocName != "" {
 		Execute(pocinfo)
 	} else {
-		for _, infostr := range info.Infostr {
+		for _, infostr := range info.InfoStr {
 			pocinfo.PocName = lib.CheckInfoPoc(infostr)
 			Execute(pocinfo)
 		}
@@ -96,12 +96,12 @@ func initpoc() {
 	}
 }
 
-func filterPoc(pocname string) (pocs []*lib.Poc) {
-	if pocname == "" {
+func filterPoc(pocName string) (pocs []*lib.Poc) {
+	if pocName == "" {
 		return AllPocs
 	}
 	for _, poc := range AllPocs {
-		if strings.Contains(poc.Name, pocname) {
+		if strings.Contains(poc.Name, pocName) {
 			pocs = append(pocs, poc)
 		}
 	}

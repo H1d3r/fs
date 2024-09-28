@@ -15,7 +15,7 @@ type CheckDatas struct {
 
 func InfoCheck(Url string, CheckData *[]CheckDatas) []string {
 	var matched bool
-	var infoname []string
+	var infoName []string
 
 	for _, data := range *CheckData {
 		for _, rule := range info.RuleDatas {
@@ -25,22 +25,22 @@ func InfoCheck(Url string, CheckData *[]CheckDatas) []string {
 				matched, _ = regexp.MatchString(rule.Rule, data.Headers)
 			}
 			if matched == true {
-				infoname = append(infoname, rule.Name)
+				infoName = append(infoName, rule.Name)
 			}
 		}
 		//flag, name := CalcMd5(data.Body)
 
 		//if flag == true {
-		//	infoname = append(infoname, name)
+		//	infoName = append(infoName, name)
 		//}
 	}
 
-	infoname = removeDuplicateElement(infoname)
+	infoName = config.RemoveDuplicate(infoName)
 
-	if len(infoname) > 0 {
-		result := fmt.Sprintf("[+] InfoScan %-25v %s ", Url, infoname)
+	if len(infoName) > 0 {
+		result := fmt.Sprintf("[+] InfoScan %-25v %s ", Url, infoName)
 		config.LogSuccess(result)
-		return infoname
+		return infoName
 	}
 	return []string{""}
 }

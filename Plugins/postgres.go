@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func PostgresScan(info *config.HostInfo) (tmperr error) {
+func PostgresScan(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return
 	}
@@ -36,7 +36,7 @@ func PostgresScan(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func PostgresConn(info *config.HostInfo, user string, pass string) (flag bool, err error) {
+func PostgresConn(info *config.ScannerCfg, user string, pass string) (flag bool, err error) {
 	flag = false
 	Host, Port, Username, Password := info.Host, info.Ports, user, pass
 	dataSourceName := fmt.Sprintf("postgres://%v:%v@%v:%v/%v?sslmode=%v", Username, Password, Host, Port, "postgres", "disable")

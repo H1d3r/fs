@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func OracleScan(info *config.HostInfo) (tmperr error) {
+func OracleBruteforce(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return
 	}
@@ -36,7 +36,7 @@ func OracleScan(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func OracleConn(info *config.HostInfo, user string, pass string) (flag bool, err error) {
+func OracleConn(info *config.ScannerCfg, user string, pass string) (flag bool, err error) {
 	flag = false
 	Host, Port, Username, Password := info.Host, info.Ports, user, pass
 	dataSourceName := fmt.Sprintf("oracle://%s:%s@%s:%s/orcl", Username, Password, Host, Port)

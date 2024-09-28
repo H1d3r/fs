@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func FtpScan(info *config.HostInfo) (tmperr error) {
+func FtpBruteforce(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return
 	}
@@ -47,7 +47,7 @@ func FtpScan(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func FtpConn(info *config.HostInfo, user string, pass string) (flag bool, err error) {
+func FtpConn(info *config.ScannerCfg, user string, pass string) (flag bool, err error) {
 	flag = false
 	Host, Port, Username, Password := info.Host, info.Ports, user, pass
 	conn, err := ftp.DialTimeout(fmt.Sprintf("%v:%v", Host, Port), time.Duration(config.Timeout)*time.Second)

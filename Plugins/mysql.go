@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"fs/config"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/projectdiscovery/gologger"
 	"strings"
 	"time"
 )
 
-func MysqlScan(info *config.HostInfo) (tmperr error) {
+func MysqlBruteforce(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return
 	}
@@ -21,8 +22,8 @@ func MysqlScan(info *config.HostInfo) (tmperr error) {
 			if flag == true && err == nil {
 				return err
 			} else {
-				errLog := fmt.Sprintf("[-] mysql %v:%v %v %v %v", info.Host, info.Ports, user, pass, err)
-				config.LogError(errLog)
+				_ = fmt.Sprintf("[-] mysql %v:%v %v %v %v", info.Host, info.Ports, user, pass, err)
+				//config.LogError(errLog)
 				tmperr = err
 				if config.CheckErrs(err) {
 					return err
@@ -36,7 +37,7 @@ func MysqlScan(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func MysqlConn(info *config.HostInfo, user string, pass string) (flag bool, err error) {
+func MysqlConn(info *config.ScannerCfg, user string, pass string) (flag bool, err error) {
 	flag = false
 	Host, Port, Username, Password := info.Host, info.Ports, user, pass
 	dataSourceName := fmt.Sprintf("%v:%v@tcp(%v:%v)/mysql?charset=utf8&timeout=%v", Username, Password, Host, Port, time.Duration(config.Timeout)*time.Second)
@@ -48,8 +49,9 @@ func MysqlConn(info *config.HostInfo, user string, pass string) (flag bool, err 
 		defer db.Close()
 		err = db.Ping()
 		if err == nil {
-			result := fmt.Sprintf("[+] mysql %v:%v %v %v", Host, Port, Username, Password)
-			config.LogSuccess(result)
+			result := fmt.Sprintf("success ! mysql %v:%v %v %v", Host, Port, Username, Password)
+			//config.LogSuccess(result)
+			gologger.Info().Msgf(result)
 			flag = true
 		}
 	}

@@ -26,7 +26,7 @@ func init() {
 	flag = true
 }
 
-func WmiExec(info *config.HostInfo) (tmperr error) {
+func WmiExec(info *config.ScannerCfg) (tmperr error) {
 	if config.NoBrute {
 		return nil
 	}
@@ -70,7 +70,7 @@ func WmiExec(info *config.HostInfo) (tmperr error) {
 	return tmperr
 }
 
-func Wmiexec(info *config.HostInfo, user string, pass string, hash string) (flag bool, err error) {
+func Wmiexec(info *config.ScannerCfg, user string, pass string, hash string) (flag bool, err error) {
 	target := fmt.Sprintf("%s:%v", info.Host, info.Ports)
 	wmiexec.Timeout = int(config.Timeout)
 	return WMIExec(target, user, pass, hash, config.Domain, config.Command, ClientHost, "", nil)

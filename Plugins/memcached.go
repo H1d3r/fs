@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func MemcachedScan(info *config.HostInfo) (err error) {
+func MemcachedBruteforce(info *config.ScannerCfg) (err error) {
 	realhost := fmt.Sprintf("%s:%v", info.Host, info.Ports)
 	client, err := config.WrapperTcpWithTimeout("tcp", realhost, time.Duration(config.Timeout)*time.Second)
 	defer func() {

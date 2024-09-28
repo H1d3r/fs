@@ -16,7 +16,6 @@ import (
 
 var (
 	AliveHosts []string
-	ExistHosts = make(map[string]struct{})
 	liveWG     sync.WaitGroup
 )
 
@@ -36,8 +35,8 @@ func sortIPs(ips []string) {
 	})
 }
 
-func ipSortHandleWorker(Ping bool, AliveHostsChan chan string) {
-	for ip := range AliveHostsChan {
+func ipSortHandleWorker(aliveHostsChan chan string, Ping bool) {
+	for ip := range aliveHostsChan {
 		AliveHosts = append(AliveHosts, ip)
 		liveWG.Done()
 	}
@@ -61,15 +60,22 @@ func ipSortHandleWorker(Ping bool, AliveHostsChan chan string) {
 	config.LogSuccess(tips)
 }
 
-func CheckHostLive(WaitCheckHosts []string, Ping bool) []string {
+func CheckHostLive(WaitCheckHosts []string, PingScanType bool) []string {
 
 	// chan 接收存活主机并处理
 	aliveHostsChan := make(chan string, len(WaitCheckHosts))
-	go ipSortHandleWorker(Ping, aliveHostsChan)
+	//go ipSortHandleWorker(aliveHostsChan, PingScanType)
+	// receive live host and handle
+	go func() {
+		for ip := range aliveHostsChan {
+			AliveHosts = append(AliveHosts, ip)
+			liveWG.Done()
+		}
+	}()
 
-	if Ping == true {
+	if PingScanType == true {
 		//使用ping探测
-		RunPing(WaitCheckHosts, aliveHostsChan)
+		execPingCmd(WaitCheckHosts, aliveHostsChan)
 	} else {
 		// 优先尝试监听本地icmp,批量探测
 		conn, err := icmp.ListenPacket("ip4:icmp", "0.0.0.0")
@@ -92,13 +98,29 @@ func CheckHostLive(WaitCheckHosts []string, Ping bool) []string {
 				//使用ping探测
 				fmt.Println("[-] The current user permissions unable to send icmp packets")
 				fmt.Println("[-] start ping")
-				RunPing(WaitCheckHosts, aliveHostsChan)
+				execPingCmd(WaitCheckHosts, aliveHostsChan)
 			}
 		}
 	}
 
 	liveWG.Wait()
 	close(aliveHostsChan)
+
+	sortIPs(AliveHosts)
+	AliveHosts = config.RemoveDuplicate(AliveHosts)
+	if PingScanType == false {
+		for _, ip := range AliveHosts {
+			result := fmt.Sprintf(" {icmp} %-15s up", ip)
+			config.LogSuccess(result)
+		}
+	} else {
+		for _, ip := range AliveHosts {
+			result := fmt.Sprintf(" {ping} %-15s up", ip)
+			config.LogSuccess(result)
+		}
+	}
+	tips := fmt.Sprintf("[*] live Hosts num: %d", len(AliveHosts))
+	config.LogSuccess(tips)
 
 	if len(WaitCheckHosts) > 1000 {
 		arrTop, arrLen := ArrayCountValueTop(AliveHosts, config.LiveTop, true)
@@ -208,20 +230,21 @@ func icmpalive(host string) bool {
 	return true
 }
 
-func RunPing(hostslist []string, AliveHostsChan chan string) {
+func execPingCmd(waitCheckHosts []string, aliveHostsChan chan string) {
 	var wg sync.WaitGroup
+	// 控制 goroutine 数量为50
 	limiter := make(chan struct{}, 50)
-	for _, host := range hostslist {
+	for _, simpleHost := range waitCheckHosts {
 		wg.Add(1)
 		limiter <- struct{}{}
 		go func(host string) {
 			if ExecPingCmd(host) {
 				liveWG.Add(1)
-				AliveHostsChan <- host
+				aliveHostsChan <- host
 			}
 			<-limiter
 			wg.Done()
-		}(host)
+		}(simpleHost)
 	}
 	wg.Wait()
 }
@@ -230,7 +253,7 @@ func ExecPingCmd(ip string) bool {
 	var command *exec.Cmd
 	switch runtime.GOOS {
 	case "windows":
-		command = exec.Command("cmd", "/c", "ping -n 1 -w 1 "+ip+" && echo true || echo false")
+		command = exec.Command("cmd.exe", "/c", "ping -n 1 -w 1 "+ip+" && echo true || echo false")
 		//ping -c 1 -i 0.5 -t 4 -W 2 -w 5 "+ip+" >/dev/null && echo true || echo false"
 	case "darwin":
 		command = exec.Command("/bin/bash", "-c", "ping -c 1 -W 1 "+ip+" && echo true || echo false")
@@ -248,6 +271,7 @@ func ExecPingCmd(ip string) bool {
 	if err = command.Wait(); err != nil {
 		return false
 	} else {
+
 		if strings.Contains(outInfo.String(), "true") && strings.Count(outInfo.String(), ip) > 2 {
 			return true
 		} else {

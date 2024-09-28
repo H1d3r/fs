@@ -2,6 +2,7 @@ package Plugins
 
 import (
 	"bytes"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"fs/config"
@@ -12,121 +13,7 @@ import (
 	"time"
 )
 
-var errNetBIOS = errors.New("netbios error")
-
-func NetBIOS(info *config.HostInfo) error {
-	netbios, _ := NetBIOS1(info)
-	output := netbios.String()
-	if len(output) > 0 {
-		result := fmt.Sprintf("[*] NetBios %-15s %s", info.Host, output)
-		config.LogSuccess(result)
-		return nil
-	}
-	return errNetBIOS
-}
-
-func NetBIOS1(info *config.HostInfo) (netbios NetBiosInfo, err error) {
-	netbios, err = GetNbnsname(info)
-	var payload0 []byte
-	if netbios.ServerService != "" || netbios.WorkstationService != "" {
-		ss := netbios.ServerService
-		if ss == "" {
-			ss = netbios.WorkstationService
-		}
-		name := netbiosEncode(ss)
-		payload0 = append(payload0, []byte("\x81\x00\x00D ")...)
-		payload0 = append(payload0, name...)
-		payload0 = append(payload0, []byte("\x00 EOENEBFACACACACACACACACACACACACA\x00")...)
-	}
-	realhost := fmt.Sprintf("%s:%v", info.Host, info.Ports)
-	var conn net.Conn
-	conn, err = config.WrapperTcpWithTimeout("tcp", realhost, time.Duration(config.Timeout)*time.Second)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-	err = conn.SetDeadline(time.Now().Add(time.Duration(config.Timeout) * time.Second))
-	if err != nil {
-		return
-	}
-
-	if info.Ports == "139" && len(payload0) > 0 {
-		_, err1 := conn.Write(payload0)
-		if err1 != nil {
-			return
-		}
-		_, err1 = ReadBytes(conn)
-		if err1 != nil {
-			return
-		}
-	}
-
-	_, err = conn.Write(NegotiateSMBv1Data1)
-	if err != nil {
-		return
-	}
-	_, err = ReadBytes(conn)
-	if err != nil {
-		return
-	}
-
-	_, err = conn.Write(NegotiateSMBv1Data2)
-	if err != nil {
-		return
-	}
-	var ret []byte
-	ret, err = ReadBytes(conn)
-	if err != nil {
-		return
-	}
-	netbios2, err := ParseNTLM(ret)
-	JoinNetBios(&netbios, &netbios2)
-	return
-}
-
-func GetNbnsname(info *config.HostInfo) (netbios NetBiosInfo, err error) {
-	senddata1 := []byte{102, 102, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 32, 67, 75, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 0, 0, 33, 0, 1}
-	//senddata1 := []byte("ff\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00 CKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\x00\x00!\x00\x01")
-	realhost := fmt.Sprintf("%s:137", info.Host)
-	conn, err := net.DialTimeout("udp", realhost, time.Duration(config.Timeout)*time.Second)
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-	err = conn.SetDeadline(time.Now().Add(time.Duration(config.Timeout) * time.Second))
-	if err != nil {
-		return
-	}
-	_, err = conn.Write(senddata1)
-	if err != nil {
-		return
-	}
-	text, _ := ReadBytes(conn)
-	netbios, err = ParseNetBios(text)
-	return
-}
-
-func bytetoint(text byte) (int, error) {
-	num1 := fmt.Sprintf("%v", text)
-	num, err := strconv.Atoi(num1)
-	return num, err
-}
-
-func netbiosEncode(name string) (output []byte) {
-	var names []int
-	src := fmt.Sprintf("%-16s", name)
-	for _, a := range src {
-		char_ord := int(a)
-		high_4_bits := char_ord >> 4
-		low_4_bits := char_ord & 0x0f
-		names = append(names, high_4_bits, low_4_bits)
-	}
-	for _, one := range names {
-		out := (one + 0x41)
-		output = append(output, byte(out))
-	}
-	return
-}
+var errNetBIOS = errors.New("NetBios 137 139 detect error")
 
 var (
 	UNIQUE_NAMES = map[string]string{
@@ -143,16 +30,16 @@ var (
 	}
 
 	GROUP_NAMES = map[string]string{
-		"\x00": "DomainName",
+		"\x00": "DNSDomainName",
 		"\x1C": "DomainControllers",
 		"\x1E": "Browser Service Elections",
 	}
 
 	NetBIOS_ITEM_TYPE = map[string]string{
-		"\x01\x00": "NetBiosComputerName",
 		"\x02\x00": "NetBiosDomainName",
-		"\x03\x00": "ComputerName",
-		"\x04\x00": "DomainName",
+		"\x01\x00": "NetBiosComputerName",
+		"\x04\x00": "DNSDomainName",
+		"\x03\x00": "DNSComputerName",
 		"\x05\x00": "DNS tree name",
 		"\x07\x00": "Time stamp",
 	}
@@ -188,16 +75,135 @@ var (
 	}
 )
 
+//		"\x02\x00": "NetBiosDomainName",
+//		"\x01\x00": "NetBiosComputerName",
+//		"\x04\x00": "DNSDomainName",
+//		"\x03\x00": "DNSComputerName",
+//		"\x05\x00": "DNS tree name",
+//		"\x07\x00": "Time stamp",
+
 type NetBiosInfo struct {
+	NetDomainName      string `yaml:"NetBiosDomainName"`
+	NetComputerName    string `yaml:"NetBiosComputerName"`
 	GroupName          string
 	WorkstationService string `yaml:"WorkstationService"`
 	ServerService      string `yaml:"ServerService"`
-	DomainName         string `yaml:"DomainName"`
+	DomainName         string `yaml:"DNSDomainName"`
 	DomainControllers  string `yaml:"DomainControllers"`
-	ComputerName       string `yaml:"ComputerName"`
+	ComputerName       string `yaml:"DNSComputerName"`
 	OsVersion          string `yaml:"OsVersion"`
-	NetDomainName      string `yaml:"NetBiosDomainName"`
-	NetComputerName    string `yaml:"NetBiosComputerName"`
+}
+
+func NetBIOSDetect(info *config.ScannerCfg) error {
+	netbios, _ := NetBIOS_Send(info)
+	output := netbios.String()
+	if len(output) > 0 {
+		result := fmt.Sprintf("[*] NetBios %-15s %s", info.Host, output)
+		config.LogSuccess(result)
+		return nil
+	}
+	return errNetBIOS
+}
+
+func NetBIOS_Send(info *config.ScannerCfg) (netbiosFrom137 NetBiosInfo, err error) {
+	netbiosFrom137, _, err = UDPGetNBNSnameBy137(info)
+	var SecondPayload []byte
+	if netbiosFrom137.ServerService != "" || netbiosFrom137.WorkstationService != "" {
+		ss := netbiosFrom137.ServerService
+		if ss == "" {
+			ss = netbiosFrom137.WorkstationService
+		}
+		name := netbiosEncode(ss)
+		SecondPayload = append(SecondPayload, []byte("\x81\x00\x00D ")...)
+		SecondPayload = append(SecondPayload, name...)
+		SecondPayload = append(SecondPayload, []byte("\x00 EOENEBFACACACACACACACACACACACACA\x00")...)
+	}
+	Host139Port := fmt.Sprintf("%s:%v", info.Host, info.Ports)
+	var conn net.Conn
+	conn, err = config.WrapperTcpWithTimeout("tcp", Host139Port, time.Duration(config.Timeout)*time.Second)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+	err = conn.SetDeadline(time.Now().Add(time.Duration(config.Timeout) * time.Second))
+	if err != nil {
+		return
+	}
+	if info.Ports == "139" && len(SecondPayload) > 0 {
+		_, err1 := conn.Write(SecondPayload)
+		if err1 != nil {
+			return
+		}
+		_, err1 = ReadBytes(conn)
+		if err1 != nil {
+			return
+		}
+	}
+	_, err = conn.Write(NegotiateSMBv1Data1)
+	if err != nil {
+		return
+	}
+	_, err = ReadBytes(conn)
+	if err != nil {
+		return
+	}
+
+	_, err = conn.Write(NegotiateSMBv1Data2)
+	if err != nil {
+		return
+	}
+	var ret []byte
+	ret, err = ReadBytes(conn)
+	if err != nil {
+		return
+	}
+	netbiosFrom139, err := ParseNTLMSSP(ret)
+	JoinNetBios(&netbiosFrom137, &netbiosFrom139)
+	return
+}
+
+func UDPGetNBNSnameBy137(info *config.ScannerCfg) (netbios NetBiosInfo, msgFrom137 string, err error) {
+	//sendDataFirst := []byte{102, 102, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 32, 67, 75, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 65, 0, 0, 33, 0, 1}
+	sendDataFirst, _ := hex.DecodeString("99840000000100000000000020434b4141414141414141414141414141414141414141414141414141414141410000210001")
+	HostNBNSPort := fmt.Sprintf("%s:137", info.Host)
+	conn, err := net.DialTimeout("udp", HostNBNSPort, time.Duration(config.Timeout)*time.Second)
+	if err != nil {
+		return
+	}
+	defer conn.Close()
+	err = conn.SetDeadline(time.Now().Add(time.Duration(config.Timeout) * time.Second))
+	if err != nil {
+		return
+	}
+	_, err = conn.Write(sendDataFirst)
+	if err != nil {
+		return
+	}
+	text, _ := ReadBytes(conn)
+	netbios, msgFrom137, err = ParseNBNSReply(text)
+	return
+}
+
+func bytetoint(text byte) (int, error) {
+	num1 := fmt.Sprintf("%v", text)
+	num, err := strconv.Atoi(num1)
+	return num, err
+}
+
+func netbiosEncode(name string) (output []byte) {
+	var names []int
+	src := fmt.Sprintf("%-16s", name)
+	for _, a := range src {
+		char_ord := int(a)
+		high_4_bits := char_ord >> 4
+		low_4_bits := char_ord & 0x0f
+		names = append(names, high_4_bits, low_4_bits)
+	}
+	for _, one := range names {
+		out := (one + 0x41)
+		output = append(output, byte(out))
+	}
+	return
 }
 
 func (info *NetBiosInfo) String() (output string) {
@@ -239,7 +245,7 @@ func (info *NetBiosInfo) String() (output string) {
 	return
 }
 
-func ParseNetBios(input []byte) (netbios NetBiosInfo, err error) {
+func ParseNBNSReply(input []byte) (netbios NetBiosInfo, msg string, err error) {
 	if len(input) < 57 {
 		err = errNetBIOS
 		return
@@ -250,13 +256,13 @@ func ParseNetBios(input []byte) (netbios NetBiosInfo, err error) {
 	if err != nil {
 		return
 	}
-	var msg string
 	for i := 0; i < num; i++ {
 		if len(data) < 18*i+16 {
 			break
 		}
 		name := string(data[18*i : 18*i+15])
 		flag_bit := data[18*i+15 : 18*i+16]
+
 		if GROUP_NAMES[string(flag_bit)] != "" && string(flag_bit) != "\x00" {
 			msg += fmt.Sprintf("%s: %s\n", GROUP_NAMES[string(flag_bit)], name)
 		} else if UNIQUE_NAMES[string(flag_bit)] != "" && string(flag_bit) != "\x00" {
@@ -283,7 +289,7 @@ func ParseNetBios(input []byte) (netbios NetBiosInfo, err error) {
 	return
 }
 
-func ParseNTLM(ret []byte) (netbios NetBiosInfo, err error) {
+func ParseNTLMSSP(ret []byte) (netBiosFrom139 NetBiosInfo, err error) {
 	if len(ret) < 47 {
 		err = errNetBIOS
 		return
@@ -304,9 +310,11 @@ func ParseNTLM(ret []byte) (netbios NetBiosInfo, err error) {
 	os_version := ret[47+length:]
 	tmp1 := bytes.ReplaceAll(os_version, []byte{0x00, 0x00}, []byte{124})
 	tmp1 = bytes.ReplaceAll(tmp1, []byte{0x00}, []byte{})
+	//Windows Server 2012 R2 Datacenter Evaluation 9600|Windows Server 2012 R2 Datacenter Evaluation 6.3
 	ostext := string(tmp1[:len(tmp1)-1])
-	ss := strings.Split(ostext, "|")
-	netbios.OsVersion = ss[0]
+	//ss := strings.Split(ostext, "|")
+	//netBiosFrom139.OsVersion = ss[0]
+	netBiosFrom139.OsVersion = ostext
 	start := bytes.Index(ret, []byte("NTLMSSP"))
 	if len(ret) < start+45 {
 		return
@@ -347,21 +355,27 @@ func ParseNTLM(ret []byte) (netbios NetBiosInfo, err error) {
 			//Time stamp, 不需要输出
 		} else if NetBIOS_ITEM_TYPE[string(item_type)] != "" {
 			msg += fmt.Sprintf("%s: %s\n", NetBIOS_ITEM_TYPE[string(item_type)], string(item_content))
+
 		} else if string(item_type) == "\x00\x00" {
 			break
 		}
 	}
-	err = yaml.Unmarshal([]byte(msg), &netbios)
+	//NetBiosDomainName: P1
+	//NetBiosComputerName: WIN-PFRSS04NG1T
+	//DNSDomainName: p1.com
+	//DNSComputerName: WIN-PFRSS04NG1T.p1.com
+	//DNS tree name: p1.com
+	err = yaml.Unmarshal([]byte(msg), &netBiosFrom139)
 	return
 }
 
-func JoinNetBios(netbios1, netbios2 *NetBiosInfo) *NetBiosInfo {
-	netbios1.ComputerName = netbios2.ComputerName
-	netbios1.NetDomainName = netbios2.NetDomainName
-	netbios1.NetComputerName = netbios2.NetComputerName
-	if netbios2.DomainName != "" {
-		netbios1.DomainName = netbios2.DomainName
+func JoinNetBios(netbiosFrom137, netbiosFrom139 *NetBiosInfo) *NetBiosInfo {
+	netbiosFrom137.ComputerName = netbiosFrom139.ComputerName
+	netbiosFrom137.NetDomainName = netbiosFrom139.NetDomainName
+	netbiosFrom137.NetComputerName = netbiosFrom139.NetComputerName
+	if netbiosFrom139.DomainName != "" {
+		netbiosFrom137.DomainName = netbiosFrom139.DomainName
 	}
-	netbios1.OsVersion = netbios2.OsVersion
-	return netbios1
+	netbiosFrom137.OsVersion = netbiosFrom139.OsVersion
+	return netbiosFrom137
 }

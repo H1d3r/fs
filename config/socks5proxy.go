@@ -34,7 +34,6 @@ func WrapperTCP(network, address string, forward *net.Dialer) (net.Conn, error) 
 		}
 	}
 	return conn, nil
-
 }
 
 func Socks5Dailer(forward *net.Dialer) (proxy.Dialer, error) {
@@ -43,7 +42,7 @@ func Socks5Dailer(forward *net.Dialer) (proxy.Dialer, error) {
 		return nil, err
 	}
 	if strings.ToLower(u.Scheme) != "socks5" {
-		return nil, errors.New("Only support socks5")
+		return nil, errors.New("[-] Only support socks5")
 	}
 	address := u.Host
 	var auth proxy.Auth
