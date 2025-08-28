@@ -1,6 +1,6 @@
 module fs
 
-go 1.20
+go 1.23.0
 
 require (
 	github.com/C-Sto/goWMIExec v0.0.1-deva.0.20210704154847-b8ebd6464a06
@@ -17,9 +17,9 @@ require (
 	github.com/sijms/go-ora/v2 v2.5.3
 	github.com/stacktitan/smb v0.0.0-20190531122847-da9a425dceb8
 	github.com/tomatome/grdp v0.0.0-20211231062539-be8adab7eaf3
-	golang.org/x/crypto v0.21.0
-	golang.org/x/net v0.23.0
-	golang.org/x/text v0.14.0
+	golang.org/x/crypto v0.35.0
+	golang.org/x/net v0.25.0
+	golang.org/x/text v0.22.0
 	google.golang.org/genproto v0.0.0-20221027153422-115e99e71e1c
 	google.golang.org/protobuf v1.33.0
 	gopkg.in/yaml.v2 v2.4.0
@@ -65,16 +65,17 @@ require (
 	github.com/tidwall/gjson v1.14.3 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
-	github.com/ulikunitz/xz v0.5.11 // indirect
+	github.com/ulikunitz/xz v0.5.14 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	go.uber.org/atomic v1.5.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap v1.14.0 // indirect
 	golang.org/x/exp v0.0.0-20221205204356-47842c84f3db // indirect
 	golang.org/x/lint v0.0.0-20190930215403-16217165b5de // indirect
-	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
-	golang.org/x/tools v0.13.0 // indirect
+	golang.org/x/mod v0.17.0 // indirect
+	golang.org/x/sync v0.11.0 // indirect
+	golang.org/x/sys v0.30.0 // indirect
+	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	gopkg.in/djherbis/times.v1 v1.3.0 // indirect
 )
 
